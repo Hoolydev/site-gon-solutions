@@ -1,0 +1,294 @@
+{
+  "name": "webhook",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "sdrgon",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "158f4851-c13c-4939-8982-2f643b3ffb3b",
+      "name": "Mensagem recebida",
+      "webhookId": "f6ddc488-8680-4351-84dd-d9e73b2d102d"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c8fd010d-6096-4a50-b3e2-e9fe26661840",
+              "name": "id_mensagem",
+              "value": "={{ $json.body.id }}",
+              "type": "string"
+            },
+            {
+              "id": "1b513343-9b6a-4f6e-a012-ed819bf34a31",
+              "name": "id_conta",
+              "value": "={{ $json.body.account.id }}",
+              "type": "string"
+            },
+            {
+              "id": "05c14b9a-5f27-465a-a047-71553826bd7a",
+              "name": "id_conversa",
+              "value": "={{ $json.body.conversation.id }}",
+              "type": "string"
+            },
+            {
+              "id": "8bf522a6-75fb-434a-854c-b736539309e1",
+              "name": "telefone",
+              "value": "={{ $json.body.sender.phone_number }}",
+              "type": "string"
+            },
+            {
+              "id": "0d622a33-f313-4758-a764-fa6cbf2b0587",
+              "name": "mensagem",
+              "value": "={{ $json.body.content || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "8f4b9d84-56e0-4f45-9f17-68c53f365f43",
+              "name": "mensagem_de_audio",
+              "value": "={{ $json.body.attachments?.[0]?.meta?.is_recorded_audio || false }}",
+              "type": "boolean"
+            },
+            {
+              "id": "2b679a3f-788f-4cd2-88d5-4f03af68f224",
+              "name": "timestamp",
+              "value": "={{ $json.body.created_at }}",
+              "type": "string"
+            },
+            {
+              "id": "24caf88e-74ce-43ab-8dc4-1fff471b706f",
+              "name": "tipo",
+              "value": "={{ $json.body.message_type }}",
+              "type": "string"
+            },
+            {
+              "id": "573669d2-1e43-4010-8c82-a67459ffe1db",
+              "name": "etiquetas",
+              "value": "={{ $json.body.conversation.labels }}",
+              "type": "array"
+            },
+            {
+              "id": "40ff895f-f63f-4e4f-bba3-c7d803c277f1",
+              "name": "url_chatwoot",
+              "value": "https://chatwoot.gonsolutions.site/",
+              "type": "string"
+            },
+            {
+              "id": "cf71dea1-d585-4235-8f05-29bc5f82b5df",
+              "name": "telegram_chat_id",
+              "value": "1160493920",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        288,
+        0
+      ],
+      "id": "7a5ab6a9-e698-456b-a8bf-b9cb70393624",
+      "name": "Info"
+    }
+  ],
+  "pinData": {
+    "Mensagem recebida": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.gonsolutions.site",
+            "user-agent": "rest-client/2.1.0 (linux-musl x86_64) ruby/3.4.4p34",
+            "content-length": "4047",
+            "accept": "application/json",
+            "accept-encoding": "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+            "content-type": "application/json",
+            "x-forwarded-for": "10.0.1.1",
+            "x-forwarded-host": "n8n.gonsolutions.site",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "2fc7c857bf67",
+            "x-real-ip": "10.0.1.1"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "account": {
+              "id": 1,
+              "name": "Gon Solutions"
+            },
+            "additional_attributes": {},
+            "content_attributes": {
+              "external_created_at": 1757710665
+            },
+            "content_type": "text",
+            "content": "Oi",
+            "conversation": {
+              "additional_attributes": {},
+              "can_reply": true,
+              "channel": "Channel::Whatsapp",
+              "contact_inbox": {
+                "id": 3,
+                "contact_id": 1,
+                "inbox_id": 6,
+                "source_id": "556282540748",
+                "created_at": "2025-09-12T19:14:45.072Z",
+                "updated_at": "2025-09-12T19:14:45.072Z",
+                "hmac_verified": false,
+                "pubsub_token": "DJPbGbxSCCNexAmL177KQf9u"
+              },
+              "id": 3,
+              "inbox_id": 6,
+              "messages": [
+                {
+                  "id": 38,
+                  "content": "Oi",
+                  "account_id": 1,
+                  "inbox_id": 6,
+                  "conversation_id": 3,
+                  "message_type": 0,
+                  "created_at": 1757710665,
+                  "updated_at": "2025-09-12T20:57:45.777Z",
+                  "private": false,
+                  "status": "sent",
+                  "source_id": "3A0EF1024014B02BEB3C",
+                  "content_type": "text",
+                  "content_attributes": {
+                    "external_created_at": 1757710665
+                  },
+                  "sender_type": "Contact",
+                  "sender_id": 1,
+                  "external_source_ids": {},
+                  "additional_attributes": {},
+                  "processed_message_content": "Oi",
+                  "sentiment": {},
+                  "conversation": {
+                    "assignee_id": 1,
+                    "unread_count": 1,
+                    "last_activity_at": 1757710665,
+                    "contact_inbox": {
+                      "source_id": "556282540748"
+                    }
+                  },
+                  "sender": {
+                    "additional_attributes": {},
+                    "custom_attributes": {},
+                    "email": null,
+                    "id": 1,
+                    "identifier": null,
+                    "name": "Oliveira",
+                    "phone_number": "+556282540748",
+                    "thumbnail": "https://chatwoot.gonsolutions.site/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaHBCZz09IiwiZXhwIjpudWxsLCJwdXIiOiJibG9iX2lkIn19--a279cd76ae80b3f88d12e0fe75b63bd9428251a3/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdCem9MWm05eWJXRjBTU0lJYW5CbkJqb0dSVlE2RTNKbGMybDZaVjkwYjE5bWFXeHNXd2RwQWZvdyIsImV4cCI6bnVsbCwicHVyIjoidmFyaWF0aW9uIn19--c9c67123bc01553f7b57bc0517dd050617ff169e/file.enc",
+                    "blocked": false,
+                    "type": "contact"
+                  }
+                }
+              ],
+              "labels": [
+                "testando-agente"
+              ],
+              "meta": {
+                "sender": {
+                  "additional_attributes": {},
+                  "custom_attributes": {},
+                  "email": null,
+                  "id": 1,
+                  "identifier": null,
+                  "name": "Oliveira",
+                  "phone_number": "+556282540748",
+                  "thumbnail": "https://chatwoot.gonsolutions.site/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaHBCZz09IiwiZXhwIjpudWxsLCJwdXIiOiJibG9iX2lkIn19--a279cd76ae80b3f88d12e0fe75b63bd9428251a3/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdCem9MWm05eWJXRjBTU0lJYW5CbkJqb0dSVlE2RTNKbGMybDZaVjkwYjE5bWFXeHNXd2RwQWZvdyIsImV4cCI6bnVsbCwicHVyIjoidmFyaWF0aW9uIn19--c9c67123bc01553f7b57bc0517dd050617ff169e/file.enc",
+                  "blocked": false,
+                  "type": "contact"
+                },
+                "assignee": {
+                  "id": 1,
+                  "name": "Oliveira",
+                  "available_name": "Oliveira",
+                  "avatar_url": "",
+                  "type": "user",
+                  "availability_status": "offline",
+                  "thumbnail": ""
+                },
+                "team": null,
+                "hmac_verified": false
+              },
+              "status": "open",
+              "custom_attributes": {},
+              "snoozed_until": null,
+              "unread_count": 1,
+              "first_reply_created_at": null,
+              "priority": null,
+              "waiting_since": 1757704485,
+              "agent_last_seen_at": 1757710598,
+              "contact_last_seen_at": 0,
+              "last_activity_at": 1757710665,
+              "timestamp": 1757710665,
+              "created_at": 1757704485,
+              "updated_at": 1757710665.7820349
+            },
+            "created_at": "2025-09-12T20:57:45.777Z",
+            "id": 38,
+            "inbox": {
+              "id": 6,
+              "name": "Gonsolutions"
+            },
+            "message_type": "incoming",
+            "private": false,
+            "sender": {
+              "account": {
+                "id": 1,
+                "name": "Gon Solutions"
+              },
+              "additional_attributes": {},
+              "avatar": "https://chatwoot.gonsolutions.site/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaHBCZz09IiwiZXhwIjpudWxsLCJwdXIiOiJibG9iX2lkIn19--a279cd76ae80b3f88d12e0fe75b63bd9428251a3/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdCem9MWm05eWJXRjBTU0lJYW5CbkJqb0dSVlE2RTNKbGMybDZaVjkwYjE5bWFXeHNXd2RwQWZvdyIsImV4cCI6bnVsbCwicHVyIjoidmFyaWF0aW9uIn19--c9c67123bc01553f7b57bc0517dd050617ff169e/file.enc",
+              "custom_attributes": {},
+              "email": null,
+              "id": 1,
+              "identifier": null,
+              "name": "Oliveira",
+              "phone_number": "+556282540748",
+              "thumbnail": "https://chatwoot.gonsolutions.site/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaHBCZz09IiwiZXhwIjpudWxsLCJwdXIiOiJibG9iX2lkIn19--a279cd76ae80b3f88d12e0fe75b63bd9428251a3/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdCem9MWm05eWJXRjBTU0lJYW5CbkJqb0dSVlE2RTNKbGMybDZaVjkwYjE5bWFXeHNXd2RwQWZvdyIsImV4cCI6bnVsbCwicHVyIjoidmFyaWF0aW9uIn19--c9c67123bc01553f7b57bc0517dd050617ff169e/file.enc",
+              "blocked": false
+            },
+            "source_id": "3A0EF1024014B02BEB3C",
+            "event": "message_created"
+          },
+          "webhookUrl": "https://n8n.gonsolutions.site/webhook/sdrgon",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Mensagem recebida": {
+      "main": [
+        [
+          {
+            "node": "Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "3f30c008-3f2c-4491-8807-3bc1c99cb6ae",
+  "meta": {
+    "instanceId": "804f959bf0baa67211818af2a797c5ade8f8a77114897a659f9c7f0bd55eb3c4"
+  },
+  "id": "JLv4BnHoAqBnS2Ng",
+  "tags": []
+}

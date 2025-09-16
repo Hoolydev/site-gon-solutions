@@ -1,0 +1,223 @@
+{
+  "name": "Fluxo Ligação Simples",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ligacao",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [160, 300],
+      "id": "webhook-ligacao",
+      "name": "Webhook Ligação"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Processa dados da ligação\nconst dados = $json;\n\nreturn {\n  nome: dados.nome || 'Cliente',\n  empresa: dados.empresa || 'Não informado',\n  telefone: dados.telefone || 'Não informado',\n  timestamp: new Date().toISOString(),\n  fonte: 'ligacao'\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 300],
+      "id": "processar-ligacao",
+      "name": "Processar Ligação"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO conversas (telefone, nome, mensagem, timestamp) VALUES ('{{ $json.telefone }}', '{{ $json.nome }}', 'Ligação recebida de {{ $json.empresa }}', '{{ $json.timestamp }}') ON CONFLICT (telefone) DO UPDATE SET nome = '{{ $json.nome }}', ultima_mensagem = 'Ligação recebida de {{ $json.empresa }}', updated_at = '{{ $json.timestamp }}' RETURNING *;"
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [640, 300],
+      "id": "salvar-ligacao",
+      "name": "Salvar Ligação",
+      "credentials": {
+        "postgres": {
+          "id": "py77429cz1L1FBB1",
+          "name": "Agente GOn"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT mensagem, timestamp FROM conversas WHERE telefone = '{{ $('Processar Ligação').item.json.telefone }}' ORDER BY timestamp DESC LIMIT 5;"
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [880, 300],
+      "id": "buscar-historico-ligacao",
+      "name": "Buscar Histórico",
+      "credentials": {
+        "postgres": {
+          "id": "py77429cz1L1FBB1",
+          "name": "Agente GOn"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Monta contexto para IA\nconst dadosLigacao = $('Processar Ligação').item.json;\n\n// Verifica se $json é array ou objeto único\nlet historicoArray = [];\nif (Array.isArray($json)) {\n  historicoArray = $json;\n} else if ($json && typeof $json === 'object') {\n  historicoArray = [$json];\n}\n\n// Monta histórico\nconst historico = historicoArray\n  .filter(item => item && item.mensagem)\n  .map(item => `${item.timestamp || 'Sem data'}: ${item.mensagem}`)\n  .join('\\n');\n\nreturn {\n  telefone: dadosLigacao.telefone,\n  nome: dadosLigacao.nome,\n  empresa: dadosLigacao.empresa,\n  contexto_completo: `Cliente: ${dadosLigacao.nome}\\nEmpresa: ${dadosLigacao.empresa}\\nTelefone: ${dadosLigacao.telefone}\\nTipo: Ligação recebida\\n\\nHistórico de contatos:\\n${historico || 'Primeiro contato'}`\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 300],
+      "id": "montar-contexto-ligacao",
+      "name": "Montar Contexto"
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "options": {
+          "temperature": 0.7
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [1600, 300],
+      "id": "openai-model-ligacao",
+      "name": "OpenAI Model"
+    },
+    {
+      "parameters": {
+        "name": "atendente_ligacao",
+        "description": "Você é o atendente virtual da GON Solutions para ligações.",
+        "promptTemplate": "Você é o atendente virtual da GON Solutions, especializada em automação e IA.\n\nContexto do cliente:\n{{ $('Montar Contexto').item.json.contexto_completo }}\n\nO cliente está ligando agora. Seja prestativo, profissional e ofereça ajuda. Pergunte como pode ajudar e qual a necessidade específica.\n\nResposta:",
+        "hasOutputParser": false
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [1360, 300],
+      "id": "atendente-ia",
+      "name": "Atendente IA"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE conversas SET mensagem = '{{ $('Atendente IA').item.json.text }}', timestamp = '{{ $now.toISO() }}', updated_at = '{{ $now.toISO() }}' WHERE telefone = '{{ $('Processar Ligação').item.json.telefone }}'; INSERT INTO conversas (telefone, nome, mensagem, timestamp) SELECT '{{ $('Processar Ligação').item.json.telefone }}', 'GON Solutions', '{{ $('Atendente IA').item.json.text }}', '{{ $now.toISO() }}' WHERE NOT EXISTS (SELECT 1 FROM conversas WHERE telefone = '{{ $('Processar Ligação').item.json.telefone }}');"
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [1840, 300],
+      "id": "salvar-resposta-ligacao",
+      "name": "Salvar Resposta",
+      "credentials": {
+        "postgres": {
+          "id": "py77429cz1L1FBB1",
+          "name": "Agente GOn"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Retorna resposta formatada para o cliente\nconst resposta = $('Atendente IA').item.json.text;\nconst cliente = $('Processar Ligação').item.json;\n\nreturn {\n  success: true,\n  message: 'Ligação processada com sucesso',\n  cliente: {\n    nome: cliente.nome,\n    empresa: cliente.empresa,\n    telefone: cliente.telefone\n  },\n  resposta_ia: resposta,\n  timestamp: new Date().toISOString()\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2080, 300],
+      "id": "resposta-final",
+      "name": "Resposta Final"
+    }
+  ],
+  "connections": {
+    "Webhook Ligação": {
+      "main": [
+        [
+          {
+            "node": "Processar Ligação",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Processar Ligação": {
+      "main": [
+        [
+          {
+            "node": "Salvar Ligação",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Salvar Ligação": {
+      "main": [
+        [
+          {
+            "node": "Buscar Histórico",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Histórico": {
+      "main": [
+        [
+          {
+            "node": "Montar Contexto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar Contexto": {
+      "main": [
+        [
+          {
+            "node": "Atendente IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atendente IA": {
+      "main": [
+        [
+          {
+            "node": "Salvar Resposta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Salvar Resposta": {
+      "main": [
+        [
+          {
+            "node": "Resposta Final",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Atendente IA",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "instanceId": "fluxo-ligacao-simples"
+  },
+  "id": "FluxoLigacaoSimples",
+  "tags": ["ligacao", "postgresql", "simples"]
+}

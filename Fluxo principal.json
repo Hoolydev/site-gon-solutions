@@ -1,0 +1,2946 @@
+{
+  "name": "Fluxo principal",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "8ca54eae-15d1-49d3-af33-7a6e5d17b833",
+              "leftValue": "={{ $json.tipo }}",
+              "rightValue": "incoming",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "82912d66-ee4b-439c-9d55-96090bc6ba62",
+              "leftValue": "={{ $json.etiquetas }}",
+              "rightValue": "agente-off",
+              "operator": {
+                "type": "array",
+                "operation": "notContains",
+                "rightType": "any"
+              }
+            },
+            {
+              "id": "cf87bb7e-6bea-4697-bcd9-57e3b63998c2",
+              "leftValue": "={{ $json.etiquetas }}",
+              "rightValue": "testando-agente",
+              "operator": {
+                "type": "array",
+                "operation": "contains",
+                "rightType": "any"
+              }
+            },
+            {
+              "id": "website-form-filter",
+              "leftValue": "={{ $json.etiquetas }}",
+              "rightValue": "website-form",
+              "operator": {
+                "type": "array",
+                "operation": "contains",
+                "rightType": "any"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        2800,
+        752
+      ],
+      "id": "de9c150d-fafc-4d5c-8e2b-99435f4cee06",
+      "name": "Mensagem chegando?"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "sdrgon",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        2240,
+        752
+      ],
+      "id": "a43b4b0f-0f70-4262-8693-bc22c34bbcd1",
+      "name": "Mensagem recebida",
+      "webhookId": "f6ddc488-8680-4351-84dd-d9e73b2d102d"
+    },
+    {
+      "parameters": {
+        "jsCode": "const ultima_mensagem_da_fila = $input.last()\nconst mensagem_do_workflow = $('Info').first()\n\nif (ultima_mensagem_da_fila.json.id_mensagem !== mensagem_do_workflow.json.id_mensagem) {\n  // Mensagem encavalada, para o workflow\n  return [];\n}\n\n// Pass-through da fila de mensagens\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3984,
+        752
+      ],
+      "id": "33a850c6-27c9-4cef-ba4e-46f47924e229",
+      "name": "Mensagem encavalada?"
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "n8n_fila_mensagens",
+          "mode": "list"
+        },
+        "returnAll": true,
+        "where": {
+          "values": [
+            {
+              "column": "telefone",
+              "value": "={{ $('Info').item.json.telefone }}"
+            }
+          ]
+        },
+        "sort": {
+          "values": [
+            {
+              "column": "timestamp"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        3760,
+        752
+      ],
+      "id": "6fb1ba89-30cf-4b88-b517-784435afdddb",
+      "name": "Buscar mensagens",
+      "credentials": {
+        "postgres": {
+          "id": "py77429cz1L1FBB1",
+          "name": "Agente GOn"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "deleteTable",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "n8n_fila_mensagens",
+          "mode": "list"
+        },
+        "deleteCommand": "delete",
+        "where": {
+          "values": [
+            {
+              "column": "telefone",
+              "value": "={{ $json.telefone }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        4192,
+        752
+      ],
+      "id": "f082a251-df12-442e-aa08-ece7d6d82977",
+      "name": "Limpar fila de mensagens",
+      "credentials": {
+        "postgres": {
+          "id": "py77429cz1L1FBB1",
+          "name": "Agente GOn"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# Processando mensagens encavaladas\n\nEssa etapa trata a situação em que o usuário envia múltiplas mensagens seguidas. O ponto negativo é o aumento no tempo de resposta do agente. Lógica dispensa uso de soluções mais complexas, como RabbitMQ.\n\nTempo de espera recomendado de ~16s. Quando estiver testando, recomendamos reduzir um pouco para ficar mais rápido de testar.\n",
+        "height": 540,
+        "width": 1080,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        3248,
+        560
+      ],
+      "id": "768515e5-62f0-4ff3-9c82-bfeb42bf4b90",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "amount": 3
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        3552,
+        752
+      ],
+      "id": "9b5fc65d-5f65-4e7f-a97e-51a24212f2f3",
+      "name": "Esperar",
+      "webhookId": "689b51a0-89fe-459d-a560-a59c79797611"
+    },
+    {
+      "parameters": {
+        "content": "# Gerando resposta",
+        "height": 540,
+        "width": 2080,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        5024,
+        560
+      ],
+      "id": "6b413eb3-559c-428f-8fd2-fcb595eb3928",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "# Enviando resposta",
+        "height": 540,
+        "width": 1200,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        7152,
+        560
+      ],
+      "id": "27278344-240c-4f0a-83e6-72b835023c96",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "# Tratando input\n",
+        "height": 540,
+        "width": 1060
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2160,
+        560
+      ],
+      "id": "08bd44f4-3e5b-499d-a66b-b759fb1951be",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Info').item.json.mensagem }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEmpty",
+                      "singleValue": true
+                    },
+                    "id": "1382cd26-d96e-4c55-99dd-2ca305ffe82e"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Texto"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "b9a7e16f-b6e4-45d7-846d-92dcb3117593",
+                    "leftValue": "={{ $('Info').item.json.mensagem_de_audio }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Áudio"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "website-form-always-pass",
+                    "leftValue": "={{ $('Info').item.json.etiquetas }}",
+                    "rightValue": "website-form",
+                    "operator": {
+                      "type": "array",
+                      "operation": "contains",
+                      "rightType": "any"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Texto"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        3088,
+        752
+      ],
+      "id": "72735298-1a62-408a-bf6a-56a43eeb87ec",
+      "name": "Tipo de mensagem"
+    },
+    {
+      "parameters": {
+        "content": "# Processando áudio",
+        "height": 420,
+        "width": 1080,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        3248,
+        1120
+      ],
+      "id": "c7f50050-0cff-48ce-90ff-ef879c8ebd2c",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "content": "Para testar, recomendamos criar uma tag \"testando-agente\" e usar no número que enviará as mensagens para a secretária durante os testes.\n\nVocê pode marcar o seu número no Chatwoot com essa tag para que o agente responda apenas você.\n\nDepois de testar e validar, só remover a regra do filtro pro seu agente responder todo mundo.\n\n",
+        "height": 180,
+        "width": 600,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2608,
+        912
+      ],
+      "id": "352194dc-c2c6-4eb3-af36-4d6fc6093cf9",
+      "name": "Sticky Note8"
+    },
+    {
+      "parameters": {
+        "sseEndpoint": "https://n8n.gonsolutions.site/mcp/monsterenervydrink/sse"
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        5632,
+        960
+      ],
+      "id": "383366b7-3a96-4ee0-9cd0-dbd3123a8777",
+      "name": "MCP Google Calendar"
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "returnAll": true,
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "",
+            "mode": "list"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTool",
+      "typeVersion": 3,
+      "position": [
+        5760,
+        960
+      ],
+      "id": "1c0afbbe-2974-45e0-8223-f0b87e6313dd",
+      "name": "Listar arquivos",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "M2sdeiQcz4acF90a",
+          "name": "Drive Gon"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "Use essa ferramenta para baixar um arquivo do Google Drive e enviá-lo para o usuário.\n",
+        "workflowId": {
+          "__rl": true,
+          "value": "<selecione seu workflow>",
+          "mode": "list"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "file_id": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('file_id', ``, 'string') }}",
+            "id_conta": "={{ $('Info').item.json.id_conta }}",
+            "id_conversa": "={{ $('Info').item.json.id_conversa }}",
+            "url_chatwoot": "={{ $('Info').item.json.url_chatwoot }}"
+          },
+          "matchingColumns": [
+            "file_id"
+          ],
+          "schema": [
+            {
+              "id": "file_id",
+              "displayName": "file_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "id_conta",
+              "displayName": "id_conta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "id_conversa",
+              "displayName": "id_conversa",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "url_chatwoot",
+              "displayName": "url_chatwoot",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        5904,
+        960
+      ],
+      "id": "d2c3c674-d5fc-459c-af1c-5ce70e084028",
+      "name": "Baixar e enviar arquivo"
+    },
+    {
+      "parameters": {
+        "content": "# Marcar como lida e \"digitando...\"",
+        "height": 540,
+        "width": 660,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        4352,
+        560
+      ],
+      "id": "59c94b7a-db4c-47e5-8663-26bf56999258",
+      "name": "Sticky Note12"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * 1-5"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        7264,
+        1488
+      ],
+      "id": "80fd4f43-44ff-4a86-96bd-57b683fbfbe8",
+      "name": "Gatilho diário"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Agora são {{ $now.format('FFFF') }}.",
+        "options": {
+          "systemMessage": "=Agora são {{ $now.format('FFFF') }}.\n\nVocê é um agente especializado em **confirmação de consultas** para a clínica. Sua função principal é:\n\n1. **Listar os eventos** agendados para o próximo dia no Google Calendar.\n2. **Obter o telefone** na descrição de cada evento.\n3. **Obter o ID da conversa** na descrição de cada evento.\n4. **Enviar uma mensagem de confirmação** usando a ferramenta \"Enviar_agendamento\", perguntando se o paciente confirma a consulta ou prefere reagendar.\n5. **Inclua na mensagem**:\n  - Nome do paciente\n  - Nome do profissional\n  - Data e hora da consulta\n\n**NÃO INCLUA O ID DA CONVERSA NA MENSAGEM**\n\n## IMPORTANTE\n- Você **não recebe respostas** diretamente; o retorno do paciente é tratado por outro agente.\n- Use a ferramenta \"Refletir1\" antes e depois de realizar operações complexas, para ter certeza de que deu tudo certo.\n- SEMPRE QUE ENVIAR UMA MENSAGEM PARA O PACIENTE, **USE A FERRAMENTA \"Salvar_memoria\"**. ISSO É MUITO IMPORTANTE, NÃO FAÇA ERRADO POR FAVOR.\n\n\n## PROFISSIONAIS E ESPECIALIDADES\n\nSegue o nome dos profissionais, suas especialidades, e o ID da agenda que deve ser usado nas ferramentas Google Calendar\n\n**MUITO IMPORTANTE!! O ID DA AGENDA INCLUI O \"@group.calendar.google.com\". NÃO OMITA AO UTILIZAR AS FERRAMENTAS**\n\n- Dr. João Paulo Ferreira - Médico - Clinico Geral (c_46b1d614bf4f151ca950431202bf90ca003301793b48cffc489dc411be79c4bf@group.calendar.google.com)\n- Dr. Roberto Almeida - Médico - Cardiologia (c_6c3005bf4afd591f13f242f6509208ddbe1feadad3f6521884ab79c59069bfd0@group.calendar.google.com)\n- Dra. Ana Silva - Dentista - Clínica Geral (c_ebce2058c0b75e881585b90539f6ded839de178d4bb64e1aa9e4f6468d6954a6@group.calendar.google.com)\n- Dra. Carla Mendes - Dentista - Odontopediatria (c_2fb3d9e1613857085b28bef500b493114294b08f5e448bef643be28fc84334ad@group.calendar.google.com)\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [
+        7904,
+        1488
+      ],
+      "id": "0f5add41-2d79-4e9e-9b80-c8d36925ed62",
+      "name": "Assistente de confirmação",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "content": "# Assistente de confirmação de agendamentos \n",
+        "height": 600,
+        "width": 1200,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        7152,
+        1328
+      ],
+      "id": "77fe76d7-7476-4b0d-add0-5b035424543f",
+      "name": "Sticky Note16"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.mensagem || $json.mensagem_audio }}",
+        "options": {
+          "systemMessage": "=Perfeito, agora vou atualizar o **prompt da Ana** incluindo a seção de **FERRAMENTAS** detalhada, já com as instruções de uso que você trouxe. Assim o agente saberá não só **quais ferramentas existem**, mas **como e quando utilizá-las**.\n\nAqui está a versão completa revisada:\n\n---\n\n# Prompt da Ana – SDR Virtual\n\nHOJE É: {{ $now.format('FFFF') }} \nTELEFONE DO CONTATO: {{ $('Info').item.json.telefone }} \nID DA CONVERSA: {{ $('Info').item.json.id_conversa }}\n\n---\n\n# Papel\n\n<papel>\n  Você é **Ana**, assistente que apoia o time de SDRs da Gon Solutions, uma empresa especializada em **automação e agentes de IA**.  \n  Seu papel é qualificar leads, entender suas necessidades e agendar reuniões com potenciais clientes interessados em soluções que aumentam a eficiência operacional e reduzem custos.\n</papel>\n\n---\n\n# Contexto\n\n<contexto>\n  A automação impulsionada por Inteligência Artificial (IA) é a chave para o sucesso no cenário de negócios atual.  \n  A Gon Solutions ajuda empresas de diversos setores a transformar sua forma de operar, oferecendo soluções que:  \n  - **Otimização de Processos**: automatizar rotinas repetitivas.  \n  - **Redução de Custos**: diminuir erros e otimizar recursos.  \n  - **Aumento da Produtividade**: liberar o time para atividades estratégicas.  \n  - **Decisão Inteligente**: apoiar decisões baseadas em dados.  \n  - **Melhoria na Experiência do Cliente**: garantir agilidade e personalização no atendimento.  \n\nSeu objetivo é:\n\n* Qualificar leads de diferentes setores.\n* Mapear dores e desafios do cliente.\n* Apresentar os benefícios da automação e IA.\n* Agendar reuniões para aprofundar a conversa.\n* Garantir que cada interação seja registrada e organizada.\n\n  </contexto>\n\n---\n\n# Serviços\n\n<servicos>\n  A Gon Solutions oferece **automação com IA** sob medida para empresas, contemplando:  \n\n* **Consultoria em Automação**: análise inicial, mapeamento de processos e planejamento estratégico.\n* **Implementação de Agentes de IA**: bots inteligentes para atendimento, qualificação de leads e suporte ao cliente.\n* **Integrações de Sistemas**: conectar CRM, ERP e outras plataformas para centralizar operações.\n* **Automação de Fluxos de Trabalho**: eliminar tarefas manuais, acelerando a execução de processos internos.\n* **Suporte Contínuo**: acompanhamento e otimização das soluções implantadas.\n\n> Nosso diferencial está em adaptar as soluções às necessidades específicas de cada negócio, desde empresas em crescimento até grandes corporações.\n>\n> </servicos>\n\n---\n\n# Tarefas\n\n<tarefas>\n  - Qualificar leads com base em setor, porte e maturidade tecnológica.  \n  - Mapear dores e desafios do potencial cliente.  \n  - Apresentar brevemente os diferenciais da Gon Solutions.  \n  - Agendar reuniões de descoberta e demonstração.  \n  - Manter o histórico organizado para a equipe de vendas.  \n</tarefas>\n\n---\n\n# Ferramentas\n\n<ferramentas>\n\n## Google Calendar\n\n* **Criar\\_evento** e **Atualizar\\_evento**: usadas para agendar e remarcar reuniões. Sempre inclua:\n\n  * Nome completo no título.\n  * Telefone.\n  * Empresa.\n  * Resumo da dor identificada.\n\n* **Buscar\\_evento**: localizar um evento específico por ID.\n\n* **Buscar\\_todos\\_os\\_eventos**: listar eventos em um período específico (apenas um dia por vez).\n\n* **Deletar\\_evento**: cancelar reuniões já agendadas.\n\n---\n\n## Escalar\\_humano\n\nUse quando:\n\n* O cliente estiver insatisfeito.\n* O assunto for fora do escopo (ex.: dúvidas não relacionadas à automação).\n* For necessário suporte imediato de um humano.\n\n---\n\n## Enviar\\_alerta\\_de\\_cancelamento\n\nEm caso de cancelamento:\n\n1. Localize a reunião e remova com **Deletar\\_evento**.\n2. Solicite confirmação da data, se necessário.\n3. Use **Enviar\\_alerta\\_de\\_cancelamento** (com nome, dia e hora cancelados).\n4. Confirme ao cliente que o cancelamento foi efetuado.\n\n---\n\n## Reagir\\_mensagem\n\nUse em situações relevantes da conversa.\n\n### Exemplos\n\n* Usuário: \"Olá!\" → Você: 😀\n* Usuário: \"Você pode consultar minha agenda?\" → Você: 👀\n* Usuário: \"Muito obrigado!\" → Você: ❤️\n\n⚠️ **Sempre usar reações no início, no final e em momentos oportunos da conversa.**\n\n---\n\n## Baixar e enviar arquivo\n\n* Você tem acesso aos arquivos da Gon Solutions.\n* Se o usuário solicitar um arquivo:\n\n  1. Use **Listar\\_arquivos**.\n  2. Depois, **Baixar\\_e\\_enviar\\_arquivo**.\n\n⚠️ **Use essa ferramenta apenas uma vez. Usar múltiplas vezes enviará o arquivo duplicado.**\n\n</ferramentas>\n\n---\n\n# Exemplos\n\n<exemplos>\n  - \"Olá [Nome], sou Ana da Gon Solutions. Notei que sua empresa atua no setor [Setor do Lead]. Vocês têm enfrentado desafios em processos manuais que poderiam ser automatizados? Podemos agendar uma reunião para mostrar como nossas soluções podem ajudar.\"  \n  - \"Oi [Nome], tudo bem? Vi que sua empresa está crescendo rápido. Já consideraram adotar IA para reduzir custos e liberar sua equipe para inovação? Gostaria de marcar uma reunião de demonstração.\"  \n</exemplos>\n\n---\n\n# Fluxos Principais\n\n## 1. Marcar Reunião\n\n* Cumprimente e informe que pode agendar diretamente.\n* Solicite: **Nome da Empresa** e **Cargo**.\n* Pergunte a preferência de data/horário.\n* Consulte a agenda com `Buscar_todos_os_eventos`.\n* Informe horários disponíveis.\n* Agende com `Criar_evento`.\n* Confirme o agendamento.\n\n## 2. Remarcar Reunião\n\n* Identifique o evento.\n* Pergunte nova data/turno.\n* Atualize com `Atualizar_evento`.\n* Confirme a atualização.\n\n## 3. Cancelar Reunião\n\n* Identifique o evento.\n* Cancele com `Deletar_evento`.\n* Envie alerta com `Enviar_alerta_de_cancelamento`.\n* Confirme ao cliente.\n\n## 4. Confirmar Reunião\n\n* Identifique o evento.\n* Atualize com `[CONFIRMADO]` no título.\n* Confirme ao cliente.\n\n---\n\n# Observações Finais\n\n* Atendimento sempre **humanizado, profissional e respeitoso**.\n* Não mencionar que é uma IA.\n* Sempre usar reações no início, fim e momentos oportunos.\n* Escale para humano em casos de insatisfação ou temas fora do escopo.\n* Nunca agendar datas passadas.\n* Confirmar a agenda correta antes de agir.\n\n\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        5328,
+        688
+      ],
+      "id": "419bb506-e965-40c8-b53a-f024cb49a8e5",
+      "name": "Secretária",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.elevenlabs.io/v1/text-to-speech/33B4UnXyTNbgLmdEDh5P",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "output_format",
+              "value": "mp3_44100_32"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "text",
+              "value": "={{ $json.text }}"
+            },
+            {
+              "name": "model_id",
+              "value": "eleven_flash_v2_5"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        6704,
+        880
+      ],
+      "id": "e54d3a57-42a6-46fa-92f3-cd91119e84c1",
+      "name": "Gerar áudio",
+      "retryOnFail": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "6Yrfm3UFCLb9f1cg",
+          "name": "Evo-api"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Secretária').item.json.output }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=Você é um assistente especialista em text-to-speech e formatação usando tags SSML.\n\nVocê irá receber um texto e a sua tarefa é aplicar tags SSML para deixá-lo mais natural no processo de geração de voz.\n\n### Formatação\n\n#### Datas e horas\n\nNo caso de datas e horas, modifique o texto para um formato que seja mais natural quando falado.\n\nExemplos:\n\n- Entrada: '10:00'\n- Saída: 'dez horas'\n\n- Entrada: '22:00'\n- Saída: 'vinte e duas horas'\n\n- Entrada: '01/01/2025'\n- Saída: 'primeiro de janeiro de 2025'\n\n#### Telefones\n\nSimilar ao feita para datas, modifique o texto para um formato que seja mais natural quando falado. Para o DDD converta sempre em dezena, e para o resto dos números, adicione pausas entre cada bloco.\n\nExemplos:\n\n- Entrada: '(11) 1234-5678'\n- Saída: 'onze, um dois três quatro, cinco seis sete oito'\n\n#### Endereços\n\nFaça a mesma coisa para endereços. Exemplos:\n\n- Entrada: 'Av. Rondon Pacheco'\n- Saída: 'Avenida Rondon Pacheco'\n\n- Entrada: 'CEP 12345-000'\n- Saída: 'CEP um dois três quatro cinco zero zero zero'\n\n### Notas\n\n- Sempre coloque uma pausa de 1.0s no começo.\n- Não use breaks no meio do texto, apenas no começo.\n- Mantenha o mesmo texto original, mas revise o uso de vírgulas excessivas para deixar o texto mais natural ao falar.\n- Remova emojis.\n- A sua saída será somente o texto convertido.\n- Use <speak> ao redor da saída.\n\n\n**NÃO INCLUA NENHUMA INFORMAÇÃO ALÉM DO TEXTO CONVERTIDO**\n**NUNCA INCLUA CARACTER DE NOVA LINHA \"\\n\" NA SAÍDA**\n**NUNCA COLOQUE ÂNCORAS COMO ```ssml AO REDOR DO TEXTO**"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.6,
+      "position": [
+        6288,
+        784
+      ],
+      "id": "c8550246-b42b-4fab-8f21-c72f55b84e0e",
+      "name": "Formatar SSML"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Mensagem chegando?').item.json.mensagem }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEmpty",
+                      "singleValue": true
+                    },
+                    "id": "1382cd26-d96e-4c55-99dd-2ca305ffe82e"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Texto"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "b9a7e16f-b6e4-45d7-846d-92dcb3117593",
+                    "leftValue": "={{ $('Info').item.json.mensagem_de_audio }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Áudio"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        5792,
+        688
+      ],
+      "id": "4c9d0188-0fa3-4bd2-b045-51e0c8290954",
+      "name": "Tipo de mensagem1"
+    },
+    {
+      "parameters": {
+        "content": "### Importante!!\n\nEssa lógica só irá funcionar com o workflow ativo (modo produção).\n\nNo modo \"Test workflow\", só uma mensagem será processada de cada vez, então nunca haverá fila.",
+        "height": 180,
+        "width": 400,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        3904,
+        912
+      ],
+      "id": "e074b074-2174-496b-a896-f92a64fead64",
+      "name": "Sticky Note15"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Secretária').item.json.output }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=Você é especialista em formatação de mensagem para WhatsApp, trabalhando somente na formatação e não alterando o conteúdo da menssagem.\n\n- Substitua ** por *\n- Remova #\n- Remova emojis"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.6,
+      "position": [
+        6672,
+        608
+      ],
+      "id": "156b4ab2-b086-4355-a1b9-8597d581b6f9",
+      "name": "Formatar texto"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Info').item.json.telegram_chat_id }}",
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Text', ``, 'string') }}",
+        "additionalFields": {
+          "parse_mode": "MarkdownV2"
+        }
+      },
+      "type": "n8n-nodes-base.telegramTool",
+      "typeVersion": 1.2,
+      "position": [
+        6048,
+        960
+      ],
+      "id": "5de03991-71a2-49c2-9bbb-aaf30b499504",
+      "name": "Enviar alerta de cancelamento",
+      "webhookId": "487b54cb-d0a4-492c-847c-3157e0fd7aa0",
+      "credentials": {
+        "telegramApi": {
+          "id": "bKEXfcnkUDXXnLhW",
+          "name": "TelegramSIl"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Info').item.json.telefone }}",
+        "tableName": "n8n_historico_mensagens",
+        "contextWindowLength": 50
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        5200,
+        960
+      ],
+      "id": "07c827b2-4306-463e-bd82-75ae623ef0fa",
+      "name": "Memory",
+      "credentials": {
+        "postgres": {
+          "id": "py77429cz1L1FBB1",
+          "name": "Agente GOn"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "Use a ferramenta para refletir sobre algo. Ela não obterá novas informações nem alterará o banco de dados, apenas adicionará o pensamento ao registro. Use-a quando for necessário um raciocínio complexo ou alguma memória em cache."
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1,
+      "position": [
+        5344,
+        960
+      ],
+      "id": "0722d827-8359-4d5e-89e3-852a05580b4e",
+      "name": "Refletir"
+    },
+    {
+      "parameters": {
+        "content": "## Notas sobre agendas Google Calendar\n\nPara referenciar uma agenda do Google Calendar corretamente, acesse as configurações da agenda, clique em \"Integrar agenda\", e copie o \"ID da agenda\".\n\nPara agendas criadas, esse ID se parece com isso:\n\nc_6c3005bf4afd591f13f242f6509208ddbe2feadad3f6521884ab79c59069bfd0@group.calendar.google.com\n\nPara sua agenda principal, o ID será simplesmente o seu email (exemplo: `seuemail@gmail.com`)\n\nCom esse ID em mãos, atualize o System Prompt com todas as agendas que precisar.\n",
+        "height": 400,
+        "width": 480,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        5024,
+        1120
+      ],
+      "id": "801d6527-d246-476f-91fa-180edeab445d",
+      "name": "Sticky Note17"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Envia uma mensagem de reação como resposta a uma mensagem do usuário. Reação é sempre um emoji.",
+        "method": "POST",
+        "url": "={{ $('Atualizar Info com conversa').item.json.url_chatwoot }}/api/v1/accounts/{{ $('Atualizar Info com conversa').item.json.id_conta }}/conversations/{{ $('Atualizar Info com conversa').item.json.id_conversa }}/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "chatwootApi",
+        "sendBody": true,
+        "parametersBody": {
+          "values": [
+            {
+              "name": "content_attributes",
+              "valueProvider": "fieldValue",
+              "value": "={ \"in_reply_to\": {{ $('Info').item.json.id_mensagem }}, \"is_reaction\": true }"
+            },
+            {
+              "name": "content"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        5488,
+        960
+      ],
+      "id": "a45e5b6f-b2ff-47ce-8571-2a3777115194",
+      "name": "Reagir mensagem",
+      "credentials": {
+        "chatwootApi": {
+          "id": "jHzjqR0ygg3QMXGg",
+          "name": "ChatWoot account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "=assistente_confirmacao",
+        "tableName": "n8n_historico_mensagens"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        7584,
+        1744
+      ],
+      "id": "425ec725-edd7-4886-b00d-8627880de852",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "py77429cz1L1FBB1",
+          "name": "Agente GOn"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-1.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        7440,
+        1744
+      ],
+      "id": "c34da4f8-2316-4a5a-86be-ec7c4c11afef",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "ByqjTDxARICfZUa2",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Salva a informação de agendamento enviada, para que a secretária saiba que foi enviada.",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "n8n_historico_mensagens",
+          "mode": "list"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "session_id": "={{ $fromAI('telefone', 'Telefone do paciente, formatado com apenas números, incluindo código do país. Ex.: \"+551112345678\"', 'string') }}",
+            "message": "={ \"type\": \"ai\", \"content\": \"{{ $fromAI('message', 'A mesma mensagem enviada para o paciente.', 'string') }}\" }"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "session_id",
+              "displayName": "session_id",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "object",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        7728,
+        1744
+      ],
+      "id": "d885c9b9-0dfb-481a-a7ae-d17bfaaef89a",
+      "name": "Salvar memoria",
+      "credentials": {
+        "postgres": {
+          "id": "py77429cz1L1FBB1",
+          "name": "Agente GOn"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sseEndpoint": "=<url do seu MCP Google Calendar>"
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        7872,
+        1744
+      ],
+      "id": "18659bc3-b40b-42b3-8e25-2df5ecfb87a1",
+      "name": "MCP Google Calendar."
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "n8n_fila_mensagens",
+          "mode": "list"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "telefone": "={{ $('Info').item.json.telefone || 'N/A' }}",
+            "mensagem": "={{ $('Info').item.json.mensagem || 'Mensagem vazia' }}",
+            "timestamp": "={{ typeof $('Info').item.json.timestamp === 'number' && $('Info').item.json.timestamp < 9999999999 ? $now.plus({seconds: $('Info').item.json.timestamp - Math.floor(Date.now()/1000)}) : $now }}",
+            "id_mensagem": "={{ $('Info').item.json.id_mensagem || Date.now().toString() }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "id_mensagem",
+              "displayName": "id_mensagem",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "telefone",
+              "displayName": "telefone",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "mensagem",
+              "displayName": "mensagem",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        3328,
+        752
+      ],
+      "id": "c00a4ca0-92a0-4802-8c1f-f34a2369b69b",
+      "name": "Enfileirar mensagem.",
+      "credentials": {
+        "postgres": {
+          "id": "py77429cz1L1FBB1",
+          "name": "Agente GOn"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "Use a ferramenta para refletir sobre algo. Ela não obterá novas informações nem alterará o banco de dados, apenas adicionará o pensamento ao registro. Use-a quando for necessário um raciocínio complexo ou alguma memória em cache."
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1,
+      "position": [
+        8144,
+        1744
+      ],
+      "id": "2152d990-697c-4999-b310-207d6e22e934",
+      "name": "Refletir1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Info').item.json.url_chatwoot }}/api/v1/accounts/{{ $('Info').item.json.id_conta }}/conversations/{{ $('Info').item.json.id_conversa }}/update_last_seen",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "chatwootApi",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4432,
+        752
+      ],
+      "id": "129dcd7e-ed19-43eb-90b0-6091fb56fa2f",
+      "name": "Marcar como lidas",
+      "credentials": {
+        "chatwootApi": {
+          "id": "jHzjqR0ygg3QMXGg",
+          "name": "ChatWoot account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Info').item.json.url_chatwoot }}/api/v1/accounts/{{ $('Info').item.json.id_conta }}/conversations/{{ $('Info').item.json.id_conversa }}/toggle_typing_status",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "chatwootApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "typing_status",
+              "value": "={{ $('Info').item.json.mensagem_de_audio ? 'recording' : 'on' }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4640,
+        752
+      ],
+      "id": "d272ae35-5a06-48cf-9d5a-c095de57fdbf",
+      "name": "Digitando/Gravando...",
+      "credentials": {
+        "chatwootApi": {
+          "id": "jHzjqR0ygg3QMXGg",
+          "name": "ChatWoot account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7eab8669-6929-4dc6-b3e2-943065bc306c",
+              "name": "mensagem",
+              "value": "={{ $('Info').item.json.mensagem || ($('Mensagem encavalada?').all().length > 0 ? $('Mensagem encavalada?').all().map(info => info.json.mensagem).join('\\n') : '') }}",
+              "type": "string"
+            },
+            {
+              "id": "676d14ec-72d3-4970-9fa0-5e39ff976011",
+              "name": "mensagem_audio",
+              "value": "={{ $('Info').item.json.mensagem_de_audio ? $('Transcrever audio').item.json.text : '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        4864,
+        752
+      ],
+      "id": "870f6d50-ee56-4b48-9b62-b5e41feb9c58",
+      "name": "Set mensagens",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Mensagem recebida').item.json.body.attachments[0].data_url }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "chatwootApi",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3408,
+        1232
+      ],
+      "id": "697c549d-f265-42d3-9e26-cdff04c9531e",
+      "name": "Download áudio",
+      "credentials": {
+        "chatwootApi": {
+          "id": "jHzjqR0ygg3QMXGg",
+          "name": "ChatWoot account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {
+          "language": "pt"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        4064,
+        1232
+      ],
+      "id": "1f8b23b3-c290-48db-b558-fc545bcca643",
+      "name": "Transcrever audio",
+      "credentials": {
+        "openAiApi": {
+          "id": "ALpediUGqFGRhqL5",
+          "name": "Silfrancys/Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        3632,
+        1232
+      ],
+      "id": "1e82a9da-0b27-4865-958b-fd0305577dbb",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        3840,
+        1232
+      ],
+      "id": "ad619098-07bd-4d51-af92-03dc627841d2",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "content": "O N8N tem um bug em operar com arquivos em algumas ocasiões.\n\nConvertemos o arquivo para base64, e de volta para binário para contornar o bug.",
+        "height": 120,
+        "width": 320
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        3632,
+        1392
+      ],
+      "id": "c7cd23fc-8fe6-4b27-b09c-e398521ac5fa",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Info').item.json.url_chatwoot }}/api/v1/accounts/{{ $('Info').item.json.id_conta }}/conversations/{{ $('Info').item.json.id_conversa }}/toggle_typing_status",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "chatwootApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "typing_status",
+              "value": "off"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        7264,
+        752
+      ],
+      "id": "fc3f8ad9-522d-4c24-8551-b4e0c9f7e00f",
+      "name": "Resetar status",
+      "credentials": {
+        "chatwootApi": {
+          "id": "jHzjqR0ygg3QMXGg",
+          "name": "ChatWoot account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "not-website-form",
+              "leftValue": "={{ $('Info').item.json.etiquetas }}",
+              "rightValue": "website-form",
+              "operator": {
+                "type": "array",
+                "operation": "notContains",
+                "rightType": "any"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        7000,
+        752
+      ],
+      "id": "filtro-antes-reset",
+      "name": "Filtro antes reset"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "not-website-form-final",
+              "leftValue": "={{ $('Info').item.json.etiquetas }}",
+              "rightValue": "website-form",
+              "operator": {
+                "type": "array",
+                "operation": "notContains",
+                "rightType": "any"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        7500,
+        624
+      ],
+      "id": "filtro-final-site",
+      "name": "Filtro final site"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "{{ $('Info').item.json.url_chatwoot }}/api/v1/accounts/{{ $('Info').item.json.id_conta }}/contacts",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "chatwootApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "name",
+              "value": "{{ $('Info').item.json.sender?.name || 'Cliente do Site' }}"
+            },
+            {
+              "name": "phone_number",
+              "value": "{{ $('Info').item.json.telefone }}"
+            },
+            {
+              "name": "inbox_id",
+              "value": "6"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        7728,
+        824
+      ],
+      "id": "criar-contato-chatwoot",
+      "name": "Criar contato Chatwoot",
+      "credentials": {
+        "chatwootApi": {
+          "id": "jHzjqR0ygg3QMXGg",
+          "name": "ChatWoot account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "{{ $('Info').item.json.url_chatwoot }}/api/v1/accounts/{{ $('Info').item.json.id_conta }}/conversations",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "chatwootApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "source_id",
+              "value": "{{ $('Info').item.json.telefone.replace('+55', '').replace('+', '') }}"
+            },
+            {
+              "name": "inbox_id",
+              "value": "6"
+            },
+            {
+              "name": "contact_id",
+              "value": "{{ $json.payload?.contact?.id || $json.id }}"
+            },
+            {
+              "name": "message",
+              "value": "{{ $('Formatar texto').item.json.text }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        7928,
+        824
+      ],
+      "id": "criar-conversa-chatwoot-real",
+      "name": "Criar conversa Chatwoot",
+      "credentials": {
+        "chatwootApi": {
+          "id": "jHzjqR0ygg3QMXGg",
+          "name": "ChatWoot account 2"
+        }
+      }
+    },
+
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Info').item.json.url_chatwoot }}/api/v1/accounts/{{ $('Info').item.json.id_conta }}/conversations/{{ $('Info').item.json.id_conversa }}/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "chatwootApi",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "is_recorded_audio",
+              "value": "=[\"{{ $binary.data.fileName }}\"]"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "attachments[]",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        8160,
+        928
+      ],
+      "id": "878ef584-e9e0-413d-a5d7-73e21242a98c",
+      "name": "Enviar áudio",
+      "credentials": {
+        "chatwootApi": {
+          "id": "jHzjqR0ygg3QMXGg",
+          "name": "ChatWoot account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Info').item.json.url_chatwoot }}/api/v1/accounts/{{ $('Info').item.json.id_conta }}/conversations/{{ $('Info').item.json.id_conversa }}/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "chatwootApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "content",
+              "value": "={{ $('Formatar texto').item.json.text }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        7728,
+        624
+      ],
+      "id": "1db206ec-efdb-4b58-b3b1-b94fc7939bf8",
+      "name": "Enviar texto.",
+      "credentials": {
+        "chatwootApi": {
+          "id": "jHzjqR0ygg3QMXGg",
+          "name": "ChatWoot account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Mensagem chegando?').item.json.mensagem }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEmpty",
+                      "singleValue": true
+                    },
+                    "id": "1382cd26-d96e-4c55-99dd-2ca305ffe82e"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Texto"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "b9a7e16f-b6e4-45d7-846d-92dcb3117593",
+                    "leftValue": "={{ $('Info').item.json.mensagem_de_audio }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Áudio"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        7504,
+        752
+      ],
+      "id": "4c4e4be6-a52f-43e6-be6c-5dc99a689ab9",
+      "name": "Tipo de mensagem2"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "=data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        7952,
+        928
+      ],
+      "id": "82e6edba-2a66-4631-8ea8-1277c2d0bfa9",
+      "name": "Base64 para áudio"
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "destinationKey": "=data",
+        "options": {
+          "encoding": "base64"
+        }
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        6928,
+        880
+      ],
+      "id": "3e0d2046-a473-40b2-a7db-b148bb79c24f",
+      "name": "Áudio para base64"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "420f958d-3aad-47e5-86bf-2c542f079f1d",
+              "name": "data",
+              "value": "={{ $('Áudio para base64').item.json.data }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        7728,
+        928
+      ],
+      "id": "e4b9f98a-3f39-4acd-a25a-2bfcb823e65a",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "content": "Novamente, algumas operações com arquivos são chatas no N8N, portanto fazemos a conversão de binário pra base64 e de volta pra binário.",
+        "height": 120,
+        "width": 300
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        7744,
+        784
+      ],
+      "id": "ab9166f4-31f6-467b-8704-7b85abde3cd4",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c8fd010d-6096-4a50-b3e2-e9fe26661840",
+              "name": "id_mensagem",
+              "value": "={{ $json.body.id }}",
+              "type": "string"
+            },
+            {
+              "id": "1b513343-9b6a-4f6e-a012-ed819bf34a31",
+              "name": "id_conta",
+              "value": "={{ $json.body.account.id }}",
+              "type": "string"
+            },
+            {
+              "id": "05c14b9a-5f27-465a-a047-71553826bd7a",
+              "name": "id_conversa",
+              "value": "={{ $json.body.conversation.id }}",
+              "type": "string"
+            },
+            {
+              "id": "8bf522a6-75fb-434a-854c-b736539309e1",
+              "name": "telefone",
+              "value": "={{ $json.body.sender.phone_number }}",
+              "type": "string"
+            },
+            {
+              "id": "0d622a33-f313-4758-a764-fa6cbf2b0587",
+              "name": "mensagem",
+              "value": "={{ $json.body.content || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "8f4b9d84-56e0-4f45-9f17-68c53f365f43",
+              "name": "mensagem_de_audio",
+              "value": "={{ $json.body.attachments?.[0]?.meta?.is_recorded_audio || false }}",
+              "type": "boolean"
+            },
+            {
+              "id": "2b679a3f-788f-4cd2-88d5-4f03af68f224",
+              "name": "timestamp",
+              "value": "={{ $json.body.created_at }}",
+              "type": "string"
+            },
+            {
+              "id": "24caf88e-74ce-43ab-8dc4-1fff471b706f",
+              "name": "tipo",
+              "value": "={{ $json.body.message_type }}",
+              "type": "string"
+            },
+            {
+              "id": "573669d2-1e43-4010-8c82-a67459ffe1db",
+              "name": "etiquetas",
+              "value": "={{ $json.body.conversation.labels }}",
+              "type": "array"
+            },
+            {
+              "id": "40ff895f-f63f-4e4f-bba3-c7d803c277f1",
+              "name": "url_chatwoot",
+              "value": "https://chatwoot.gonsolutions.site/",
+              "type": "string"
+            },
+            {
+              "id": "cf71dea1-d585-4235-8f05-29bc5f82b5df",
+              "name": "telegram_chat_id",
+              "value": "1160493920",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2528,
+        752
+      ],
+      "id": "c55e3caa-74f4-4cee-917b-cdce4dd45e38",
+      "name": "Info"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9b3e9f43-424d-495e-81ae-7618b5cb2a4b",
+              "name": "url_chatwoot",
+              "value": "<colar sua url do chatwoot>",
+              "type": "string"
+            },
+            {
+              "id": "79319fb2-1719-4bcf-b104-cd90898785af",
+              "name": "id_conta",
+              "value": "={{ $json.account_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        7712,
+        1488
+      ],
+      "id": "a762be0c-0035-4a45-aa97-704858a25a8d",
+      "name": "Info1"
+    },
+    {
+      "parameters": {
+        "description": "Chame essa ferramenta para direcionar o atendimento para o gestor responsável.",
+        "workflowId": {
+          "__rl": true,
+          "value": "<selecione seu workflow>",
+          "mode": "list"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "telefone": "={{ $('Info').item.json.telefone }}",
+            "nome": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('nome', ``, 'string') }}",
+            "ultima_mensagem": "={{ $('Set mensagens').item.json.mensagem || $('Set mensagens').item.json.mensagem_audio }}",
+            "id_conta": "={{ $('Info').item.json.id_conta }}",
+            "id_conversa": "={{ $('Info').item.json.id_conversa }}",
+            "telegram_chat_id": "={{ $('Info').item.json.telegram_chat_id }}",
+            "url_chatwoot": "={{ $('Info').item.json.url_chatwoot }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "telefone",
+              "displayName": "telefone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "nome",
+              "displayName": "nome",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "ultima_mensagem",
+              "displayName": "ultima_mensagem",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "id_conta",
+              "displayName": "id_conta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "id_conversa",
+              "displayName": "id_conversa",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "telegram_chat_id",
+              "displayName": "telegram_chat_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "url_chatwoot",
+              "displayName": "url_chatwoot",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        6192,
+        960
+      ],
+      "id": "e590544b-0f9f-4ada-bac5-cb7a63e9fc5f",
+      "name": "Escalar humano"
+    },
+    {
+      "parameters": {
+        "resource": "Accounts",
+        "requestOptions": {}
+      },
+      "type": "@devlikeapro/n8n-nodes-chatwoot.chatWoot",
+      "typeVersion": 1,
+      "position": [
+        7488,
+        1488
+      ],
+      "id": "d7faebf6-59bb-4a04-b6bf-fffa0f2ff12c",
+      "name": "Buscar informações da conta",
+      "credentials": {
+        "chatwootApi": {
+          "id": "jHzjqR0ygg3QMXGg",
+          "name": "ChatWoot account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "Use essa ferramenta para enviar as informações de agendamento no WhatsApp.\n\nO ID da conversa deve ser extraído das informações do evento.",
+        "workflowId": {
+          "__rl": true,
+          "value": "<selecione seu workflow>",
+          "mode": "list"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "mensagem": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('mensagem', ``, 'string') }}",
+            "id_conversa": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('id_conversa', ``, 'string') }}",
+            "id_conta": "={{ $('Info1').item.json.id_conta }}",
+            "url_chatwoot": "={{ $('Info1').item.json.url_chatwoot }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "mensagem",
+              "displayName": "mensagem",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "id_conta",
+              "displayName": "id_conta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "id_conversa",
+              "displayName": "id_conversa",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "url_chatwoot",
+              "displayName": "url_chatwoot",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        8000,
+        1744
+      ],
+      "id": "d802eeba-dd2b-4df2-9de4-0944f0f5f338",
+      "name": "Enviar agendamento"
+    },
+    {
+      "parameters": {
+        "content": "## Configurar variáveis no Info!!!",
+        "height": 80,
+        "width": 250,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2448,
+        640
+      ],
+      "id": "5da08962-9a7b-43ab-9720-ed5e3b9499d7",
+      "name": "Sticky Note31"
+    },
+    {
+      "parameters": {
+        "content": "## Configurar variáveis no Info1",
+        "height": 80,
+        "width": 250,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        8000,
+        1360
+      ],
+      "id": "36bf9b13-9f29-441d-b019-0395954fed2f",
+      "name": "Sticky Note32"
+    },
+    {
+      "parameters": {
+        "content": "### Configurar telegram_chat_id no node Info!!!",
+        "height": 80,
+        "width": 200,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        6000,
+        1120
+      ],
+      "id": "5ee48c9a-de0d-4de6-880e-97d1b71bcc52",
+      "name": "Sticky Note25"
+    },
+    {
+      "parameters": {
+        "content": "### Configurar workflow do MCP Google Calendar!!!",
+        "height": 80,
+        "width": 200,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        5584,
+        1120
+      ],
+      "id": "0ec56799-6974-4cba-b16c-6049a73cbcb6",
+      "name": "Sticky Note33"
+    },
+    {
+      "parameters": {
+        "content": "### Caso não use a voz da Keren, não se esqueça de atualizar o ID no node \"Gerar áudio\"\n\nAlterar esse ID que está no final da URL: `33B4UnXyTNbgLmdEDh5P`",
+        "width": 300,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        6624,
+        1120
+      ],
+      "id": "7c1a6511-10d7-4e9f-975c-405b1babaa53",
+      "name": "Sticky Note14"
+    },
+    {
+      "parameters": {
+        "content": "## Importante\n\nSe a mensagem não está sendo marcada como lida, verifique no WhatsApp se essa função está habilitada.",
+        "width": 320,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        4672,
+        928
+      ],
+      "id": "f4d767ed-28a4-44a9-b551-20ff1fabdd16",
+      "name": "Sticky Note34"
+    },
+    {
+      "parameters": {
+        "content": "## Nota sobre \"Enviar agendamento\"\n\nO N8N não permite colocar uma variável informada pelo agente (✨) na URL.\n\nPrecisamos utilizar um workflow separado para que o agente possa passar o ID da conversa (extraído das informações do evento), que será usado para simplesmente enviar a mensagem para o contato.",
+        "height": 320,
+        "width": 580,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        7760,
+        1968
+      ],
+      "id": "5fb2727a-d829-4aac-bce5-2d7fe8ee6946",
+      "name": "Sticky Note9"
+    },
+    {
+      "parameters": {
+        "content": "## Notas sobre a ferramenta \"Salvar memoria\"\n\nPor padrão, no N8N não existe uma forma direta de compartilhar memória entre agentes diferentes.\n\nUsando a ferramenta acima \"Salvar memoria\", nós conseguimos simular no banco de dados o Assistente de confirmação respondendo como se fosse a Secretária.\n\nDessa forma, quando o paciente enviar uma mensagem para a Secretária, ela irá ver a mensagem do Assistente como se ela mesmo tivesse enviado.\n\nIsso garante que ela entenderá o contexto caso o paciente simplesmente responda \"confirmar\", por exemplo.",
+        "height": 320,
+        "width": 600,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        7152,
+        1968
+      ],
+      "id": "80b05de0-ab8f-4ec1-a4ad-b79235941e66",
+      "name": "Sticky Note19"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        5072,
+        960
+      ],
+      "id": "44220542-6474-4ad8-abc7-5ec831105d9a",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "ALpediUGqFGRhqL5",
+          "name": "Silfrancys/Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        6336,
+        976
+      ],
+      "id": "47fddd4f-f022-440a-ad47-4f27791eb057",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "ALpediUGqFGRhqL5",
+          "name": "Silfrancys/Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        6640,
+        784
+      ],
+      "id": "d0a2e385-26c7-4a85-97bd-80a35aeaea27",
+      "name": "OpenAI Chat Model2",
+      "credentials": {
+        "openAiApi": {
+          "id": "ALpediUGqFGRhqL5",
+          "name": "Silfrancys/Account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Mensagem recebida": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.gonsolutions.site",
+            "user-agent": "rest-client/2.1.0 (linux-musl x86_64) ruby/3.4.4p34",
+            "content-length": "4047",
+            "accept": "application/json",
+            "accept-encoding": "gzip;q=1.0,deflate;q=0.6,identity;q=0.3",
+            "content-type": "application/json",
+            "x-forwarded-for": "10.0.1.1",
+            "x-forwarded-host": "n8n.gonsolutions.site",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "2fc7c857bf67",
+            "x-real-ip": "10.0.1.1"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "account": {
+              "id": 1,
+              "name": "Gon Solutions"
+            },
+            "additional_attributes": {},
+            "content_attributes": {
+              "external_created_at": 1757710665
+            },
+            "content_type": "text",
+            "content": "Oi",
+            "conversation": {
+              "additional_attributes": {},
+              "can_reply": true,
+              "channel": "Channel::Whatsapp",
+              "contact_inbox": {
+                "id": 3,
+                "contact_id": 1,
+                "inbox_id": 6,
+                "source_id": "556282540748",
+                "created_at": "2025-09-12T19:14:45.072Z",
+                "updated_at": "2025-09-12T19:14:45.072Z",
+                "hmac_verified": false,
+                "pubsub_token": "DJPbGbxSCCNexAmL177KQf9u"
+              },
+              "id": 3,
+              "inbox_id": 6,
+              "messages": [
+                {
+                  "id": 38,
+                  "content": "Oi",
+                  "account_id": 1,
+                  "inbox_id": 6,
+                  "conversation_id": 3,
+                  "message_type": 0,
+                  "created_at": 1757710665,
+                  "updated_at": "2025-09-12T20:57:45.777Z",
+                  "private": false,
+                  "status": "sent",
+                  "source_id": "3A0EF1024014B02BEB3C",
+                  "content_type": "text",
+                  "content_attributes": {
+                    "external_created_at": 1757710665
+                  },
+                  "sender_type": "Contact",
+                  "sender_id": 1,
+                  "external_source_ids": {},
+                  "additional_attributes": {},
+                  "processed_message_content": "Oi",
+                  "sentiment": {},
+                  "conversation": {
+                    "assignee_id": 1,
+                    "unread_count": 1,
+                    "last_activity_at": 1757710665,
+                    "contact_inbox": {
+                      "source_id": "556282540748"
+                    }
+                  },
+                  "sender": {
+                    "additional_attributes": {},
+                    "custom_attributes": {},
+                    "email": null,
+                    "id": 1,
+                    "identifier": null,
+                    "name": "Oliveira",
+                    "phone_number": "+556282540748",
+                    "thumbnail": "https://chatwoot.gonsolutions.site/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaHBCZz09IiwiZXhwIjpudWxsLCJwdXIiOiJibG9iX2lkIn19--a279cd76ae80b3f88d12e0fe75b63bd9428251a3/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdCem9MWm05eWJXRjBTU0lJYW5CbkJqb0dSVlE2RTNKbGMybDZaVjkwYjE5bWFXeHNXd2RwQWZvdyIsImV4cCI6bnVsbCwicHVyIjoidmFyaWF0aW9uIn19--c9c67123bc01553f7b57bc0517dd050617ff169e/file.enc",
+                    "blocked": false,
+                    "type": "contact"
+                  }
+                }
+              ],
+              "labels": [
+                "testando-agente"
+              ],
+              "meta": {
+                "sender": {
+                  "additional_attributes": {},
+                  "custom_attributes": {},
+                  "email": null,
+                  "id": 1,
+                  "identifier": null,
+                  "name": "Oliveira",
+                  "phone_number": "+556282540748",
+                  "thumbnail": "https://chatwoot.gonsolutions.site/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaHBCZz09IiwiZXhwIjpudWxsLCJwdXIiOiJibG9iX2lkIn19--a279cd76ae80b3f88d12e0fe75b63bd9428251a3/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdCem9MWm05eWJXRjBTU0lJYW5CbkJqb0dSVlE2RTNKbGMybDZaVjkwYjE5bWFXeHNXd2RwQWZvdyIsImV4cCI6bnVsbCwicHVyIjoidmFyaWF0aW9uIn19--c9c67123bc01553f7b57bc0517dd050617ff169e/file.enc",
+                  "blocked": false,
+                  "type": "contact"
+                },
+                "assignee": {
+                  "id": 1,
+                  "name": "Oliveira",
+                  "available_name": "Oliveira",
+                  "avatar_url": "",
+                  "type": "user",
+                  "availability_status": "offline",
+                  "thumbnail": ""
+                },
+                "team": null,
+                "hmac_verified": false
+              },
+              "status": "open",
+              "custom_attributes": {},
+              "snoozed_until": null,
+              "unread_count": 1,
+              "first_reply_created_at": null,
+              "priority": null,
+              "waiting_since": 1757704485,
+              "agent_last_seen_at": 1757710598,
+              "contact_last_seen_at": 0,
+              "last_activity_at": 1757710665,
+              "timestamp": 1757710665,
+              "created_at": 1757704485,
+              "updated_at": 1757710665.7820349
+            },
+            "created_at": "2025-09-12T20:57:45.777Z",
+            "id": 38,
+            "inbox": {
+              "id": 6,
+              "name": "Gonsolutions"
+            },
+            "message_type": "incoming",
+            "private": false,
+            "sender": {
+              "account": {
+                "id": 1,
+                "name": "Gon Solutions"
+              },
+              "additional_attributes": {},
+              "avatar": "https://chatwoot.gonsolutions.site/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaHBCZz09IiwiZXhwIjpudWxsLCJwdXIiOiJibG9iX2lkIn19--a279cd76ae80b3f88d12e0fe75b63bd9428251a3/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdCem9MWm05eWJXRjBTU0lJYW5CbkJqb0dSVlE2RTNKbGMybDZaVjkwYjE5bWFXeHNXd2RwQWZvdyIsImV4cCI6bnVsbCwicHVyIjoidmFyaWF0aW9uIn19--c9c67123bc01553f7b57bc0517dd050617ff169e/file.enc",
+              "custom_attributes": {},
+              "email": null,
+              "id": 1,
+              "identifier": null,
+              "name": "Oliveira",
+              "phone_number": "+556282540748",
+              "thumbnail": "https://chatwoot.gonsolutions.site/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaHBCZz09IiwiZXhwIjpudWxsLCJwdXIiOiJibG9iX2lkIn19--a279cd76ae80b3f88d12e0fe75b63bd9428251a3/eyJfcmFpbHMiOnsibWVzc2FnZSI6IkJBaDdCem9MWm05eWJXRjBTU0lJYW5CbkJqb0dSVlE2RTNKbGMybDZaVjkwYjE5bWFXeHNXd2RwQWZvdyIsImV4cCI6bnVsbCwicHVyIjoidmFyaWF0aW9uIn19--c9c67123bc01553f7b57bc0517dd050617ff169e/file.enc",
+              "blocked": false
+            },
+            "source_id": "3A0EF1024014B02BEB3C",
+            "event": "message_created"
+          },
+          "webhookUrl": "https://n8n.gonsolutions.site/webhook/sdrgon",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Mensagem chegando?": {
+      "main": [
+        [
+          {
+            "node": "Tipo de mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensagem recebida": {
+      "main": [
+        [
+          {
+            "node": "Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensagem encavalada?": {
+      "main": [
+        [
+          {
+            "node": "Limpar fila de mensagens",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar mensagens": {
+      "main": [
+        [
+          {
+            "node": "Mensagem encavalada?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpar fila de mensagens": {
+      "main": [
+        [
+          {
+            "node": "Marcar como lidas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Esperar": {
+      "main": [
+        [
+          {
+            "node": "Buscar mensagens",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tipo de mensagem": {
+      "main": [
+        [
+          {
+            "node": "Enfileirar mensagem.",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Download áudio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "Secretária",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Listar arquivos": {
+      "ai_tool": [
+        [
+          {
+            "node": "Secretária",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Baixar e enviar arquivo": {
+      "ai_tool": [
+        [
+          {
+            "node": "Secretária",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Secretária": {
+      "main": [
+        [
+          {
+            "node": "Tipo de mensagem1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gerar áudio": {
+      "main": [
+        [
+          {
+            "node": "Áudio para base64",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatar SSML": {
+      "main": [
+        [
+          {
+            "node": "Gerar áudio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tipo de mensagem1": {
+      "main": [
+        [
+          {
+            "node": "Formatar texto",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Formatar SSML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatar texto": {
+      "main": [
+        [
+          {
+            "node": "Filtro antes reset",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtro antes reset": {
+      "main": [
+        [
+          {
+            "node": "Resetar status",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Tipo de mensagem2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar alerta de cancelamento": {
+      "ai_tool": [
+        [
+          {
+            "node": "Secretária",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Secretária",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Refletir": {
+      "ai_tool": [
+        [
+          {
+            "node": "Secretária",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reagir mensagem": {
+      "ai_tool": [
+        [
+          {
+            "node": "Secretária",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Assistente de confirmação",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Assistente de confirmação",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Salvar memoria": {
+      "ai_tool": [
+        [
+          {
+            "node": "Assistente de confirmação",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Google Calendar.": {
+      "ai_tool": [
+        [
+          {
+            "node": "Assistente de confirmação",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enfileirar mensagem.": {
+      "main": [
+        [
+          {
+            "node": "Esperar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Refletir1": {
+      "ai_tool": [
+        [
+          {
+            "node": "Assistente de confirmação",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Marcar como lidas": {
+      "main": [
+        [
+          {
+            "node": "Digitando/Gravando...",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+
+    "Digitando/Gravando...": {
+      "main": [
+        [
+          {
+            "node": "Set mensagens",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set mensagens": {
+      "main": [
+        [
+          {
+            "node": "Secretária",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download áudio": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcrever audio": {
+      "main": [
+        [
+          {
+            "node": "Marcar como lidas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Transcrever audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resetar status": {
+      "main": [
+        [
+          {
+            "node": "Tipo de mensagem2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tipo de mensagem2": {
+      "main": [
+        [
+          {
+            "node": "Filtro final site",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtro final site": {
+      "main": [
+        [
+          {
+            "node": "Enviar texto.",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Criar conversa Chatwoot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Criar contato Chatwoot": {
+      "main": [
+        [
+          {
+            "node": "Criar conversa Chatwoot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Criar conversa Chatwoot": {
+      "main": [
+        []
+      ]
+    },
+    "Base64 para áudio": {
+      "main": [
+        [
+          {
+            "node": "Enviar áudio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Áudio para base64": {
+      "main": [
+        [
+          {
+            "node": "Resetar status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Base64 para áudio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Info": {
+      "main": [
+        [
+          {
+            "node": "Mensagem chegando?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Info1": {
+      "main": [
+        [
+          {
+            "node": "Assistente de confirmação",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Escalar humano": {
+      "ai_tool": [
+        [
+          {
+            "node": "Secretária",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar agendamento": {
+      "ai_tool": [
+        [
+          {
+            "node": "Assistente de confirmação",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gatilho diário": {
+      "main": [
+        [
+          {
+            "node": "Buscar informações da conta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar informações da conta": {
+      "main": [
+        [
+          {
+            "node": "Info1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Secretária",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Formatar SSML",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Formatar texto",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "548f9502-68d2-4403-bbcb-6781e6f09bc3",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "804f959bf0baa67211818af2a797c5ade8f8a77114897a659f9c7f0bd55eb3c4"
+  },
+  "id": "ngccWeHwQaioXYmi",
+  "tags": []
+}

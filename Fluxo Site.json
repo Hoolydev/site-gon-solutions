@@ -1,0 +1,358 @@
+{
+  "name": "Fluxo Site - Primeira Resposta",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "site-form",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        240,
+        300
+      ],
+      "id": "webhook-site",
+      "name": "Webhook Site",
+      "webhookId": "site-form-webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "nome",
+              "name": "nome",
+              "value": "={{ $json.nome }}",
+              "type": "string"
+            },
+            {
+              "id": "empresa",
+              "name": "empresa",
+              "value": "={{ $json.empresa }}",
+              "type": "string"
+            },
+            {
+              "id": "telefone",
+              "name": "telefone",
+              "value": "={{ $json.telefone }}",
+              "type": "string"
+            },
+            {
+              "id": "mensagem",
+              "name": "mensagem",
+              "value": "={{ $json.mensagem }}",
+              "type": "string"
+            },
+            {
+              "id": "tipo_atendimento",
+              "name": "tipo_atendimento",
+              "value": "={{ $json.tipoAtendimento }}",
+              "type": "string"
+            },
+            {
+              "id": "fonte",
+              "name": "fonte",
+              "value": "website_form",
+              "type": "string"
+            },
+            {
+              "id": "url_chatwoot",
+              "name": "url_chatwoot",
+              "value": "https://chatwoot.gonsolutions.site",
+              "type": "string"
+            },
+            {
+              "id": "id_conta",
+              "name": "id_conta",
+              "value": "1",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        480,
+        300
+      ],
+      "id": "processar-dados",
+      "name": "Processar Dados"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://chatwoot.gonsolutions.site/api/v1/accounts/1/contacts",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "chatwootApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "name",
+              "value": "{{ $json.nome }}"
+            },
+            {
+              "name": "phone_number",
+              "value": "{{ $json.telefone }}"
+            },
+            {
+              "name": "custom_attributes",
+              "value": {
+                "empresa": "{{ $json.empresa }}",
+                "tipo_atendimento": "{{ $json.tipo_atendimento }}",
+                "fonte": "{{ $json.fonte }}"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        300
+      ],
+      "id": "criar-contato",
+      "name": "Criar Contato",
+      "credentials": {
+        "chatwootApi": {
+          "id": "jHzjqR0ygg3QMXGg",
+          "name": "ChatWoot account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://chatwoot.gonsolutions.site/api/v1/accounts/1/conversations",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "chatwootApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "source_id",
+              "value": "{{ $('Processar Dados').item.json.telefone.replace('+55', '').replace('+', '') }}"
+            },
+            {
+              "name": "inbox_id",
+              "value": "6"
+            },
+            {
+              "name": "contact_id",
+              "value": "{{ $json.payload.contact.id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        960,
+        300
+      ],
+      "id": "criar-conversa",
+      "name": "Criar Conversa",
+      "credentials": {
+        "chatwootApi": {
+          "id": "jHzjqR0ygg3QMXGg",
+          "name": "ChatWoot account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "options": {
+          "temperature": 0.7
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        300
+      ],
+      "id": "openai-model",
+      "name": "OpenAI Chat Model"
+    },
+    {
+      "parameters": {
+        "name": "secretaria_site",
+        "description": "Você é a secretária virtual da GON Solutions, especializada em automação e IA. Responda de forma profissional e prestativa para este primeiro contato do site.",
+        "promptTemplate": "Você recebeu um novo contato do site da GON Solutions:\n\n👤 **Cliente:** {{ $('Processar Dados').item.json.nome }}\n🏢 **Empresa:** {{ $('Processar Dados').item.json.empresa }}\n📱 **Telefone:** {{ $('Processar Dados').item.json.telefone }}\n📋 **Tipo de Atendimento:** {{ $('Processar Dados').item.json.tipo_atendimento }}\n\n💬 **Mensagem do cliente:**\n{{ $('Processar Dados').item.json.mensagem }}\n\n---\n\n**INSTRUÇÕES:**\n\nGere uma resposta de **primeira mensagem** profissional e acolhedora. A resposta deve:\n\n1. ✅ Agradecer o contato e mencionar que recebemos a solicitação\n2. ✅ Confirmar que entendemos a necessidade (resumir brevemente)\n3. ✅ Informar que nossa equipe especializada entrará em contato em breve\n4. ✅ Mencionar que estamos disponíveis para esclarecer dúvidas\n5. ✅ Ser personalizada com base no tipo de atendimento\n6. ✅ Manter tom profissional mas amigável\n7. ✅ Incluir uma pergunta para engajar o cliente\n\n**IMPORTANTE:** Esta é a primeira mensagem. Seja acolhedor e demonstre que valorizamos o contato.\n\n**Resposta:**",
+        "hasOutputParser": false
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [
+        1200,
+        300
+      ],
+      "id": "secretaria-site",
+      "name": "Secretária Site"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://chatwoot.gonsolutions.site/api/v1/accounts/1/conversations/{{ $('Criar Conversa').item.json.id }}/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "chatwootApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "content",
+              "value": "{{ $('Secretária Site').item.json.text }}"
+            },
+            {
+              "name": "message_type",
+              "value": "outgoing"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1680,
+        300
+      ],
+      "id": "enviar-primeira-resposta",
+      "name": "Enviar Primeira Resposta",
+      "credentials": {
+        "chatwootApi": {
+          "id": "jHzjqR0ygg3QMXGg",
+          "name": "ChatWoot account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.telegram.org/bot{{ $vars.TELEGRAM_BOT_TOKEN }}/sendMessage",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "1160493920"
+            },
+            {
+              "name": "text",
+              "value": "🌐 **NOVO CONTATO DO SITE - PRIMEIRA RESPOSTA ENVIADA**\n\n👤 **Cliente:** {{ $('Processar Dados').item.json.nome }}\n🏢 **Empresa:** {{ $('Processar Dados').item.json.empresa }}\n📱 **Telefone:** {{ $('Processar Dados').item.json.telefone }}\n📋 **Tipo:** {{ $('Processar Dados').item.json.tipo_atendimento }}\n\n💬 **Mensagem Original:**\n{{ $('Processar Dados').item.json.mensagem }}\n\n🤖 **Primeira Resposta Enviada:**\n{{ $('Secretária Site').item.json.text }}\n\n✅ **Status:** Contato criado no Chatwoot\n📞 **Próximo passo:** Cliente pode continuar a conversa no WhatsApp"
+            },
+            {
+              "name": "parse_mode",
+              "value": "Markdown"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1920,
+        300
+      ],
+      "id": "notificar-telegram",
+      "name": "Notificar Telegram"
+    }
+  ],
+  "connections": {
+    "Webhook Site": {
+      "main": [
+        [
+          {
+            "node": "Processar Dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Processar Dados": {
+      "main": [
+        [
+          {
+            "node": "Criar Contato",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Criar Contato": {
+      "main": [
+        [
+          {
+            "node": "Criar Conversa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Criar Conversa": {
+      "main": [
+        [
+          {
+            "node": "Secretária Site",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Secretária Site": {
+      "main": [
+        [
+          {
+            "node": "Enviar Primeira Resposta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Primeira Resposta": {
+      "main": [
+        [
+          {
+            "node": "Notificar Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Secretária Site",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "instanceId": "site-first-response-workflow"
+  },
+  "id": "FluxoSitePrimeiraResposta",
+  "tags": ["site", "primeira-resposta", "chatwoot"]
+}

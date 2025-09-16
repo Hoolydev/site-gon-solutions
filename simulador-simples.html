@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Simples - Webhook</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .form-container {
+            padding: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 18px 40px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .response-section {
+            margin-top: 40px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px solid #e1e5e9;
+        }
+
+        .response-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .response-content {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .webhook-config {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border-left: 4px solid #2196f3;
+        }
+
+        .webhook-config h3 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+
+        .webhook-config code {
+            background: #bbdefb;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .payload-preview {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border: 1px solid #ddd;
+        }
+
+        .payload-preview h4 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .payload-preview pre {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 0.85em;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📞 Simulador de Ligação</h1>
+            <p>Teste webhook para recebimento de ligações (padrão Tally)</p>
+        </div>
+
+        <div class="form-container">
+            <div class="webhook-config">
+                <h3>📡 Configuração do Webhook</h3>
+                <p><strong>URL:</strong> <code id="webhook-url">https://n8n.gonsolutions.site/webhook/sdrdemo</code></p>
+                <p><strong>Método:</strong> <code>POST</code></p>
+                <p><strong>Content-Type:</strong> <code>application/json</code></p>
+            </div>
+
+            <div class="form-group">
+                <label for="webhook-url-input">🔗 URL do Webhook:</label>
+                <input type="url" id="webhook-url-input" value="https://n8n.gonsolutions.site/webhook/sdrdemo" placeholder="https://n8n.gonsolutions.site/webhook/sdrdemo">
+            </div>
+
+            <div class="form-group">
+                <label for="nome">👤 Nome Completo:</label>
+                <input type="text" id="nome" placeholder="Maria Santos" value="Maria Santos">
+            </div>
+
+            <div class="form-group">
+                <label for="empresa">🏢 Empresa:</label>
+                <input type="text" id="empresa" placeholder="Tech Corp" value="Tech Corp">
+            </div>
+
+            <div class="form-group">
+                <label for="telefone">📱 Telefone:</label>
+                <input type="tel" id="telefone" placeholder="+5562982683262" value="+5562982683262">
+            </div>
+
+            <button class="btn" onclick="enviarWebhook()">🚀 Enviar Webhook</button>
+
+            <div class="payload-preview">
+                <h4>📦 Preview do Payload:</h4>
+                <pre id="payload-preview"></pre>
+            </div>
+
+            <div class="response-section">
+                <div class="response-title">
+                    <span>📥</span>
+                    <span>Resposta do Webhook</span>
+                </div>
+                <div class="response-content" id="response-content">
+                    Clique em "Enviar Webhook" para ver a resposta...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Atualiza preview do payload em tempo real
+        function atualizarPreview() {
+            const payload = {
+                nome: document.getElementById('nome').value,
+                empresa: document.getElementById('empresa').value,
+                telefone: document.getElementById('telefone').value,
+                timestamp: new Date().toISOString(),
+                fonte: 'ligacao'
+            };
+
+            document.getElementById('payload-preview').textContent = JSON.stringify(payload, null, 2);
+        }
+
+        // Atualiza URL do webhook
+        function atualizarWebhookUrl() {
+            const url = document.getElementById('webhook-url-input').value;
+            document.getElementById('webhook-url').textContent = url;
+        }
+
+        // Adiciona listeners para atualização em tempo real
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputs = ['nome', 'empresa', 'telefone'];
+            inputs.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.addEventListener('input', atualizarPreview);
+                    element.addEventListener('change', atualizarPreview);
+                }
+            });
+            
+            document.getElementById('webhook-url-input').addEventListener('input', atualizarWebhookUrl);
+            
+            // Atualiza preview inicial
+            atualizarPreview();
+        });
+
+        // Função principal para enviar webhook
+        async function enviarWebhook() {
+            const responseDiv = document.getElementById('response-content');
+            const webhookUrl = document.getElementById('webhook-url-input').value;
+            
+            // Monta payload com dados da ligação (padrão Tally)
+            const payload = {
+                nome: document.getElementById('nome').value,
+                empresa: document.getElementById('empresa').value,
+                telefone: document.getElementById('telefone').value,
+                timestamp: new Date().toISOString(),
+                fonte: 'ligacao'
+            };
+
+            try {
+                responseDiv.textContent = '🔄 Enviando webhook...\n\n📤 Payload:\n' + JSON.stringify(payload, null, 2);
+                
+                const response = await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                const responseText = await response.text();
+                
+                responseDiv.textContent = `✅ Webhook enviado com sucesso!\n\n📊 Status: ${response.status} ${response.statusText}\n\n📤 Payload Enviado:\n${JSON.stringify(payload, null, 2)}\n\n📥 Resposta:\n${responseText || 'Sem conteúdo na resposta'}`;
+                
+            } catch (error) {
+                responseDiv.textContent = `❌ Erro ao enviar webhook:\n\n🚨 Erro: ${error.message}\n\n📤 Payload que tentou enviar:\n${JSON.stringify(payload, null, 2)}`;
+            }
+        }
+    </script>
+</body>
+</html>
