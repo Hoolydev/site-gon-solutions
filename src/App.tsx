@@ -29,7 +29,7 @@ const HomePage = () => (
 function App() {
   return (
     <Router>
-      <div className="min-h-screen bg-gray-900">
+      <div className="min-h-screen bg-[#0c0414] text-white">
         <Header />
         <Routes>
           <Route path="/" element={<HomePage />} />

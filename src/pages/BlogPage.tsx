@@ -5,9 +5,9 @@ import { blogPosts } from '../data/blogPosts';
 
 const BlogPage = () => {
   return (
-    <div className="min-h-screen bg-gray-900 pt-20">
+    <div className="min-h-screen bg-[#0c0414] pt-20">
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-900/50 via-gray-900 to-green-900/50 py-20">
+      <div className="bg-gradient-to-r from-purple-900/50 via-[#0c0414] to-green-900/50 py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
             Blog <span className="text-green-400">GON Solutions</span>
@@ -89,7 +89,7 @@ const BlogPage = () => {
       </div>
 
       {/* CTA Section */}
-      <div className="bg-gradient-to-r from-purple-900/50 via-gray-900 to-green-900/50 py-20">
+      <div className="bg-gradient-to-r from-purple-900/50 via-[#0c0414] to-green-900/50 py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
             Quer implementar essas soluções na sua empresa?
